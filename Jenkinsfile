@@ -2,17 +2,16 @@ pipeline {
     agent any
 
     environment {
-        GIT_REPO            = 'https://github.com/Shubham-Salunke-26/onlineshop-poc.git'
-        GIT_BRANCH          = 'main'
+        GIT_REPO         = 'https://github.com/Shubham-Salunke-26/onlineshop-poc.git'
+        GIT_BRANCH       = 'main'
 
-        DOCKER_IMAGE        = 'shubhyash/onlineshop-poc'
-        IMAGE_TAG           = "${BUILD_NUMBER}"
+        DOCKER_IMAGE     = 'shubhyash/onlineshop-poc'
+        IMAGE_TAG        = "${BUILD_NUMBER}"
 
-        DOCKER_HUB_CREDS    = 'docker-hub-cred'
-        GITHUB_CREDS        = 'git-hub-cred'
+        DOCKER_HUB_CREDS = 'docker-hub-cred'
+        GITHUB_CREDS     = 'git-hub-cred'
 
-        KIND_CLUSTER_NAME   = 'kind'
-        K8S_NAMESPACE       = 'default'
+        K8S_NAMESPACE    = 'onlineshop'
     }
 
     options {
@@ -54,6 +53,7 @@ pipeline {
                         passwordVariable: 'DOCKER_PASS'
                     )
                 ]) {
+
                     sh '''
                         echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
                     '''
@@ -76,11 +76,12 @@ pipeline {
         stage('Deploy to Kind Cluster') {
             steps {
                 sh """
+                    set -e
+
                     kubectl apply -f k8s/
 
-                    kubectl rollout restart deployment/frontend
-
-                    kubectl rollout status deployment/frontend \
+                    kubectl rollout status deployment/onlineshop \
+                    -n ${K8S_NAMESPACE} \
                     --timeout=300s
                 """
             }
@@ -88,16 +89,16 @@ pipeline {
 
         stage('Verify Deployment') {
             steps {
-                sh '''
-                    echo "Pods:"
-                    kubectl get pods -o wide
+                sh """
+                    echo "========== Deployments =========="
+                    kubectl get deployments -n ${K8S_NAMESPACE}
 
-                    echo "Services:"
-                    kubectl get svc
+                    echo "========== Pods =========="
+                    kubectl get pods -o wide -n ${K8S_NAMESPACE}
 
-                    echo "Deployments:"
-                    kubectl get deployments
-                '''
+                    echo "========== Services =========="
+                    kubectl get svc -n ${K8S_NAMESPACE}
+                """
             }
         }
     }
@@ -105,11 +106,15 @@ pipeline {
     post {
 
         success {
-            echo "Deployment completed successfully."
+            echo 'Deployment completed successfully.'
+
+            sh """
+                docker image prune -f
+            """
         }
 
         failure {
-            echo "Deployment failed."
+            echo 'Deployment failed.'
         }
 
         always {
