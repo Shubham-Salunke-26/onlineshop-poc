@@ -3,7 +3,7 @@ kind: Service
 
 metadata:
   name: onlineshop-service
-  namespace: onlineshop
+  namespace: default
 
 spec:
   selector:
