@@ -1,7 +1,6 @@
 pipeline {
 agent any
-
-```
+    
 environment {
     GIT_REPO         = 'https://github.com/Shubham-Salunke-26/onlineshop-poc.git'
     GIT_BRANCH       = 'main'
