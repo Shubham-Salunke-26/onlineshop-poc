@@ -13,8 +13,6 @@ environment {
     GITHUB_CREDS     = 'git-hub-cred'
 
     K8S_NAMESPACE    = 'default'
-    DEPLOYMENT_NAME  = 'onlineshop'
-    CONTAINER_NAME   = 'onlineshop'
 }
 
 options {
@@ -68,6 +66,14 @@ stages {
         }
     }
 
+    stage('Update Kubernetes Manifest') {
+        steps {
+            sh """
+                sed -i 's|IMAGE_PLACEHOLDER|${DOCKER_IMAGE}:${IMAGE_TAG}|g' k8s/deployment.yaml
+            """
+        }
+    }
+
     stage('Deploy to Kind Cluster') {
         steps {
             sh """
@@ -75,11 +81,7 @@ stages {
 
                 kubectl apply -f k8s/
 
-                kubectl set image deployment/${DEPLOYMENT_NAME} \
-                ${CONTAINER_NAME}=${DOCKER_IMAGE}:${IMAGE_TAG} \
-                -n ${K8S_NAMESPACE}
-
-                kubectl rollout status deployment/${DEPLOYMENT_NAME} \
+                kubectl rollout status deployment/onlineshop \
                 -n ${K8S_NAMESPACE} \
                 --timeout=300s
             """
@@ -103,22 +105,16 @@ stages {
 }
 
 post {
-
     success {
         echo 'Deployment completed successfully.'
 
-        sh '''
+        sh """
             docker image prune -f
-        '''
+        """
     }
 
     failure {
         echo 'Deployment failed.'
-
-        sh """
-            kubectl get pods -n ${K8S_NAMESPACE} || true
-            kubectl describe deployment ${DEPLOYMENT_NAME} -n ${K8S_NAMESPACE} || true
-        """
     }
 
     always {
