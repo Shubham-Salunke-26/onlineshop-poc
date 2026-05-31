@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: onlineshop
-  namespace: onlineshop
+  namespace: default
 
 spec:
   replicas: 3
@@ -20,7 +20,7 @@ spec:
       containers:
       - name: onlineshop
 
-        image: IMAGE_PLACEHOLDER
+        image: shubhyash/onlineshop-poc
 
         imagePullPolicy: Always
 
