@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: onlineshop-config
-  namespace: default
+  namespace: onlineshop
 
 data:
   APP_ENV: "production"
